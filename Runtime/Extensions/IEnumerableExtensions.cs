@@ -5,13 +5,21 @@ using UnityEngine;
 
 public static class IEnumerableExtensions
 {
+    /// <summary>
+    /// Checks if the collection is null or contains no elements
+    /// </summary>
+    public static bool IsNullOrEmpty<TSource>(this IEnumerable<TSource> source)
+    {
+        return source == null || !source.Any();
+    }
+
     public static TSource MaxBy<TSource, TKey>(
         this IEnumerable<TSource> source,
         Func<TSource, TKey> keySelector)
     {
         return source.Aggregate(
-            (maxSoFar, next) => Comparer<TKey>.Default.Compare(keySelector(next), keySelector(maxSoFar)) > 0 
-                ? next 
+            (maxSoFar, next) => Comparer<TKey>.Default.Compare(keySelector(next), keySelector(maxSoFar)) > 0
+                ? next
                 : maxSoFar);
     }
 
@@ -32,7 +40,7 @@ public static class IEnumerableExtensions
         {
             throw new ArgumentNullException(nameof(source));
         }
-            
+
         if (keySelector == null)
         {
             throw new ArgumentNullException(nameof(keySelector));
