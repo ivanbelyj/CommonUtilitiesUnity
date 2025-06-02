@@ -42,6 +42,7 @@ public struct ColorVariationSettings
     };
 }
 
+// Ai-generated
 public static class ColorVariationUtils
 {
     public static Color GenerateVariation(Color baseColor, in ColorVariationSettings settings, System.Random random = null)
