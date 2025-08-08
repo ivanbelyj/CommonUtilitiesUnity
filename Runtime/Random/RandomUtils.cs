@@ -18,6 +18,21 @@ public static class IEnumerableRandomExtensions
         => RandomUtils.GetRandomOne(items, random);
 }
 
+public static class IReadOnlyListExtensions
+{
+    public static T GetRandomWeighted<T>(
+        this IReadOnlyList<T> items,
+        System.Func<T, int, float> getWeight,
+        System.Random random = null)
+        => RandomUtils.GetRandomWeighted(items, getWeight, random);
+
+    public static T GetRandomWeighted<T>(
+        this IReadOnlyList<T> items,
+        System.Func<T, float> getWeight,
+        System.Random random = null)
+        => RandomUtils.GetRandomWeighted(items, (x, _) => getWeight(x), random);
+}
+
 public static class RandomUtils
 {
     /// <summary>
@@ -28,35 +43,67 @@ public static class RandomUtils
         => items[(int)((random == null ? Random.value : random.NextDoubleInclusive()) * items.Count)];
 
     /// <summary>
-    /// Selects a random element from the list using weighted probabilities (roulette wheel algorithm).
+    /// Selects a random element from the list using weighted probabilities.
     /// </summary>
     /// <param name="items">The list of items to choose from.</param>
-    /// <param name="weights">The list of weights corresponding to each item.</param>
+    /// <param name="getWeight">Function that returns weight for each item (item, index).</param>
+    /// <param name="random">Optional random generator.</param>
     /// <returns>A randomly selected item based on the provided weights.</returns>
-    public static T GetRandomWeighted<T>(IList<T> items, IList<float> weights, System.Random random = null)
+    public static T GetRandomWeighted<T>(
+        IReadOnlyList<T> items,
+        System.Func<T, int, float> getWeight,
+        System.Random random = null)
     {
-        if (items == null || weights == null
-            || items.Count != weights.Count || items.Count == 0)
+        if (items == null || getWeight == null)
         {
-            throw new System.ArgumentException("Items and weights must be non-null, of the same length, and non-empty.");
+            throw new System.ArgumentException("Items and getWeight must be non-null.");
         }
 
-        float totalWeight = 0f;
-        foreach (float weight in weights)
-            totalWeight += weight;
+        if (items.Count == 0)
+        {
+            throw new System.ArgumentException("Items list must be non-empty.");
+        }
 
-        float randomValue = (random == null ? Random.value : (float)random.NextDoubleInclusive())
-            * totalWeight;
-        float cumulativeWeight = 0f;
+        T selected = default;
+        float total = 0f;
+        bool hasPositiveWeight = false;
 
         for (int i = 0; i < items.Count; i++)
         {
-            cumulativeWeight += weights[i];
-            if (randomValue <= cumulativeWeight)
-                return items[i];
+            float weight = getWeight(items[i], i);
+            if (weight < 0)
+            {
+                throw new System.ArgumentException($"Weight must be non-negative (got {weight} for item at index {i}).");
+            }
+
+            total += weight;
+
+            if (weight > 0)
+            {
+                hasPositiveWeight = true;
+                float r = (random == null
+                    ? Random.value
+                    : (float)random.NextDoubleInclusive()) * total;
+
+                if (r <= weight)
+                {
+                    selected = items[i];
+                }
+            }
         }
 
-        return items[items.Count - 1];
+        if (!hasPositiveWeight)
+        {
+            throw new System.ArgumentException("At least one weight must be positive.");
+        }
+
+        return selected;
+    }
+
+    [System.Obsolete("Please, use other overload that accepts delegate")]
+    public static T GetRandomWeighted<T>(IReadOnlyList<T> items, IReadOnlyList<float> weights, System.Random random = null)
+    {
+        return GetRandomWeighted(items, (_, index) => weights[index], random);
     }
 
     /// <summary>
