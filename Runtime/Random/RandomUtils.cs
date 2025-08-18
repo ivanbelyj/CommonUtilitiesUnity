@@ -10,6 +10,16 @@ public static class RandomExtensions
     {
         return random.Next() / (double)(int.MaxValue - 1);
     }
+
+    public static float Range(
+        this System.Random random,
+        float minInclusive,
+        float maxExclusive)
+    {
+        double range = (double)maxExclusive - (double)minInclusive;
+        double sample = random.NextDouble() * range + (double)minInclusive;
+        return (float)sample;
+    }
 }
 
 public static class IEnumerableRandomExtensions
