@@ -1,10 +1,13 @@
+using System;
 using UnityEngine;
 
-public class EntityProvider : MonoBehaviour
+public class EntityProvider : MonoBehaviour, IEntity
 {
     private Entity entity;
 
     public Entity Entity => entity;
+
+    public Guid EntityId => Entity.Id;
 
     private void Awake()
     {
