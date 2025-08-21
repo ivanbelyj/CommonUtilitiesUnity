@@ -9,8 +9,8 @@ public record ColorGenerationSchemaItem
 }
 
 [CreateAssetMenu(
-    fileName = "New Appearance Color Generation Schema",
-    menuName = "Customizable Appearance 2D/Appearance Color Generation Schema",
+    fileName = "New Color Generation Schema",
+    menuName = "Color Generation/Color Generation Schema",
     order = 52)]
 [System.Serializable]
 public class ColorGenerationSchema : ScriptableObject
