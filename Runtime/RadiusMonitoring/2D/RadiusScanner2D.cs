@@ -11,21 +11,6 @@ public class RadiusScanner2D : IRadiusScanner
     public int LayerMask { get; set; }
     public bool AllowDrawGizmos { get; set; }
 
-    // Todo: remove commented ?
-    // private GridManager gridManager;
-    // private GridManager GridManager {
-    //     get {
-    //         // Works in OnDrawGizmos
-    //         if (gridManager == null)
-    //         {
-    //             gridManager = GameObject
-    //                 .Find("GridManager")
-    //                 .GetComponent<GridManager>();
-    //         }
-    //         return gridManager;
-    //     }
-    // }
-
     public IEnumerable<DetectedObjectInfo> Scan(Vector3 originPosition, bool drawGizmos)
     {
         var objectsInRadius = GetObjectsWithDistanceInRadius(originPosition, drawGizmos);
@@ -42,17 +27,19 @@ public class RadiusScanner2D : IRadiusScanner
             Radius,
             LayerMask);
         var objectsInRadius = overlappedByCircle
-            .Select(collider => {
+            .Select(collider =>
+            {
                 // Check is object in radius
                 Vector3 objectPosition = collider.transform.position;
                 float distance = GetDistance(originPosition, objectPosition);
-                
+
                 if (drawGizmos)
                 {
-                    HandleDrawGizmos(distance < Radius, objectPosition, originPosition);    
+                    HandleDrawGizmos(distance < Radius, objectPosition, originPosition);
                 }
-                
-                return new DetectedObjectInfo() {
+
+                return new DetectedObjectInfo()
+                {
                     distance = distance,
                     gameObject = collider.gameObject
                 };
@@ -61,7 +48,8 @@ public class RadiusScanner2D : IRadiusScanner
         return objectsInRadius;
     }
 
-    private float GetDistance(Vector3 v1, Vector3 v2) {
+    private float GetDistance(Vector3 v1, Vector3 v2)
+    {
         return Vector3.Distance(v1, v2);
 
         // For some reason was implemented in Jailpunk previously.
@@ -76,7 +64,8 @@ public class RadiusScanner2D : IRadiusScanner
         Vector3 objectPosition,
         Vector3 originPosition)
     {
-        if (AllowDrawGizmos) {
+        if (AllowDrawGizmos)
+        {
             Color prevCol = Gizmos.color;
             Gizmos.color = isDistanceLess ? Color.green : Color.red;
             Gizmos.DrawLine(objectPosition, originPosition);
