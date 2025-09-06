@@ -10,28 +10,86 @@ public class RadiusScanner3D : IRadiusScanner
     public int LayerMask { get; set; }
     public bool AllowDrawGizmos { get; set; }
 
-    private Collider[] overlapBuffer = new Collider[64];
-    private DetectedObjectInfo[] resultsArray = new DetectedObjectInfo[64];
-    private int lastCount;
+    private Collider[] overlapBuffer;
+    private DetectedObjectInfo[] resultsArray;
+    private const int InitialBufferSize = 32;
+    private const int WarningBufferSize = 1024;
+    private const int CriticalBufferSize = 5120;
+    private const int MaxBufferSize = 8192;
+
+    private bool warningIssued = false;
+    private string lastWarning = "";
+
+    public RadiusScanner3D()
+    {
+        overlapBuffer = new Collider[InitialBufferSize];
+        resultsArray = new DetectedObjectInfo[InitialBufferSize];
+    }
 
     public IEnumerable<DetectedObjectInfo> Scan(Vector3 originPosition, bool drawGizmos)
     {
-        lastCount = Physics.OverlapSphereNonAlloc(
+        int detectedCount = Physics.OverlapSphereNonAlloc(
             originPosition,
             Radius,
             overlapBuffer,
             LayerMask
         );
 
-        if (resultsArray.Length < lastCount)
+        if (detectedCount == overlapBuffer.Length)
         {
-            resultsArray = new DetectedObjectInfo[Mathf.NextPowerOfTwo(lastCount)];
+            if (!HandleBufferOverflow(ref detectedCount, originPosition))
+            {
+                return System.Array.Empty<DetectedObjectInfo>();
+            }
         }
 
-        int validCount = 0;
-        float radiusSqr = Radius * Radius;
+        return ProcessDetectedObjects(detectedCount, originPosition, drawGizmos);
+    }
 
-        for (int i = 0; i < lastCount; i++)
+    private bool HandleBufferOverflow(ref int detectedCount, Vector3 originPosition)
+    {
+        if (detectedCount >= CriticalBufferSize)
+        {
+            LogCriticalError(detectedCount);
+            return false;
+        }
+
+        if (detectedCount < MaxBufferSize)
+        {
+            int newSize = Mathf.Min(Mathf.NextPowerOfTwo(detectedCount * 2), MaxBufferSize);
+            LogWarningIfNeeded(newSize);
+
+            overlapBuffer = new Collider[newSize];
+            resultsArray = new DetectedObjectInfo[newSize];
+
+            detectedCount = Physics.OverlapSphereNonAlloc(
+                originPosition,
+                Radius,
+                overlapBuffer,
+                LayerMask
+            );
+
+            if (detectedCount == overlapBuffer.Length && detectedCount >= CriticalBufferSize)
+            {
+                LogCriticalError(detectedCount);
+                return false;
+            }
+        }
+        else
+        {
+            Debug.LogError($"RadiusScanner reached maximum buffer size: {MaxBufferSize}.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private IEnumerable<DetectedObjectInfo> ProcessDetectedObjects(int detectedCount, Vector3 originPosition, bool drawGizmos)
+    {
+        float radiusSqr = Radius * Radius;
+        int validCount = 0;
+
+        for (int i = 0; i < detectedCount; i++)
         {
             Collider collider = overlapBuffer[i];
             if (collider == null) continue;
@@ -40,24 +98,21 @@ public class RadiusScanner3D : IRadiusScanner
             Vector3 direction = objectPosition - originPosition;
             float distanceSqr = direction.sqrMagnitude;
 
-            if (distanceSqr <= radiusSqr)
+            bool isInRadius = distanceSqr <= radiusSqr;
+
+            if (drawGizmos)
             {
-                float distance = Mathf.Sqrt(distanceSqr);
-
-                if (drawGizmos)
-                {
-                    HandleDrawGizmos(true, objectPosition, originPosition);
-                }
-
-                resultsArray[validCount++] = new DetectedObjectInfo()
-                {
-                    distance = distance,
-                    gameObject = collider.gameObject
-                };
+                HandleDrawGizmos(isInRadius, objectPosition, originPosition);
             }
-            else if (drawGizmos)
+
+            if (isInRadius)
             {
-                HandleDrawGizmos(false, objectPosition, originPosition);
+                resultsArray[validCount] = new DetectedObjectInfo
+                {
+                    gameObject = collider.gameObject,
+                    distance = Mathf.Sqrt(distanceSqr)
+                };
+                validCount++;
             }
         }
 
@@ -72,26 +127,56 @@ public class RadiusScanner3D : IRadiusScanner
         }
     }
 
-    private void HandleDrawGizmos(
-        bool isDistanceLess,
-        Vector3 objectPosition,
-        Vector3 originPosition)
+    private void HandleDrawGizmos(bool isDistanceLess, Vector3 objectPosition, Vector3 originPosition)
     {
         if (AllowDrawGizmos)
         {
-            Color prevCol = Gizmos.color;
             Gizmos.color = isDistanceLess ? Color.green : Color.red;
             Gizmos.DrawLine(objectPosition, originPosition);
-            Gizmos.color = prevCol;
         }
+    }
+
+    private void LogWarningIfNeeded(int newSize)
+    {
+        if (newSize >= WarningBufferSize && !warningIssued)
+        {
+            warningIssued = true;
+            lastWarning = $"WARNING: RadiusScanner buffer resized to {newSize}. Radius: {Radius}";
+            Debug.LogWarning(lastWarning);
+        }
+    }
+
+    private void LogCriticalError(int detectedCount)
+    {
+        string errorMessage =
+            $"CRITICAL: RadiusScanner buffer overflow! Required: {detectedCount}, " +
+            $"Max: {MaxBufferSize}. Reduce radius or optimize colliders.";
+        Debug.LogError(errorMessage);
     }
 
     public void EnsureBufferCapacity(int requiredCapacity)
     {
+        if (requiredCapacity > MaxBufferSize)
+        {
+            Debug.LogError($"Cannot ensure capacity: {requiredCapacity} > {MaxBufferSize}");
+            return;
+        }
+
         if (overlapBuffer.Length < requiredCapacity)
         {
-            overlapBuffer = new Collider[Mathf.NextPowerOfTwo(requiredCapacity)];
-            resultsArray = new DetectedObjectInfo[Mathf.NextPowerOfTwo(requiredCapacity)];
+            int newSize = Mathf.NextPowerOfTwo(requiredCapacity);
+            if (newSize >= WarningBufferSize)
+            {
+                Debug.LogWarning($"Manual buffer resize to: {newSize}");
+            }
+
+            overlapBuffer = new Collider[newSize];
+            resultsArray = new DetectedObjectInfo[newSize];
         }
     }
+
+    public string GetLastWarning() => lastWarning;
+    public void ClearWarnings() => warningIssued = false;
+    public int GetCurrentBufferSize() => overlapBuffer.Length;
+    public void Dispose() => ClearWarnings();
 }

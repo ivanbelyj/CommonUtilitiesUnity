@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,38 +9,40 @@ using UnityEngine;
 public class TimedAction
 {
     /// <summary>
-    /// Delegate type for actions to be executed.
-    /// </summary>
-    public delegate void ActionDelegate();
-
-    private List<Timer> timers = new();
-    private float lastUpdateTime;
-
-    /// <summary>
     /// Internal timer data structure.
     /// </summary>
-    [System.Serializable]
-    private class Timer
+    [Serializable]
+    private class TimedActionElement
     {
+        /// <summary>
+        /// Seconds
+        /// </summary>
         public float interval;
-        public float nextExecution;
-        public ActionDelegate action;
+
+        /// <summary>
+        /// Seconds
+        /// </summary>
+        public float nextExecutionTime;
+
+        public Action action;
     }
+
+    private List<TimedActionElement> timedActions = new();
 
     /// <summary>
     /// Adds a new action to be executed at specified intervals.
     /// </summary>
     /// <param name="action">The action to execute</param>
     /// <param name="interval">Time in seconds between executions</param>
-    public void AddAction(ActionDelegate action, float interval)
+    public void AddAction(Action action, float interval)
     {
-        Timer timer = new Timer
+        var timer = new TimedActionElement
         {
             interval = interval,
-            nextExecution = Time.time + interval,
+            nextExecutionTime = Time.time + interval,
             action = action
         };
-        timers.Add(timer);
+        timedActions.Add(timer);
     }
 
     /// <summary>
@@ -48,29 +51,18 @@ public class TimedAction
     /// </summary>
     public void Update()
     {
-        float currentTime = Time.time;
-        
-        for (int i = timers.Count - 1; i >= 0; i--)
+        var currentTime = Time.time;
+
+        for (var i = timedActions.Count - 1; i >= 0; i--)
         {
-            Timer timer = timers[i];
-            
-            if (currentTime >= timer.nextExecution)
+            var timedAction = timedActions[i];
+
+            if (currentTime >= timedAction.nextExecutionTime)
             {
-                timer.action?.Invoke();
-                timer.nextExecution = currentTime + timer.interval;
+                timedAction.action?.Invoke();
+                timedAction.nextExecutionTime = currentTime + timedAction.interval;
             }
         }
-        
-        lastUpdateTime = currentTime;
-    }
-
-    /// <summary>
-    /// Stops execution of a specific action.
-    /// </summary>
-    /// <param name="action">The action to stop</param>
-    public void StopAction(ActionDelegate action)
-    {
-        timers.RemoveAll(timer => timer.action == action);
     }
 
     /// <summary>
@@ -78,7 +70,7 @@ public class TimedAction
     /// </summary>
     public void StopAllActions()
     {
-        timers.Clear();
+        timedActions.Clear();
     }
 
     /// <summary>

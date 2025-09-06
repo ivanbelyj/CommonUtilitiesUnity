@@ -7,9 +7,11 @@ public class CompositeRadiusDetector
 {
     private readonly IRadiusScanner radiusScanner;
     private readonly CompositeRadiusDetectorConfiguration configuration;
-    
+
     private List<RadiusDetector> detectors = new();
-    private float secondsSinceLastUpdate = 0f;
+
+    private float lastUpdateTime = 0f;
+
     private bool isScannerInitialized = false;
 
     public CompositeRadiusDetector(
@@ -24,13 +26,11 @@ public class CompositeRadiusDetector
 
     public void Tick(Vector3 originPosition, bool drawGizmos)
     {
-        secondsSinceLastUpdate += Time.deltaTime;
-
         if (!configuration.UseUpdateFrequency
-            || secondsSinceLastUpdate >= configuration.UpdateFrequencySeconds)
+            || Time.time >= lastUpdateTime + configuration.UpdateFrequencySeconds)
         {
             Detect(originPosition, drawGizmos);
-            secondsSinceLastUpdate = 0;
+            lastUpdateTime = Time.time;
         }
     }
 

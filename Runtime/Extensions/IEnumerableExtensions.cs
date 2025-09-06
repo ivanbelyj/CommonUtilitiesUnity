@@ -17,10 +17,39 @@ public static class IEnumerableExtensions
         this IEnumerable<TSource> source,
         Func<TSource, TKey> keySelector)
     {
-        return source.Aggregate(
-            (maxSoFar, next) => Comparer<TKey>.Default.Compare(keySelector(next), keySelector(maxSoFar)) > 0
-                ? next
-                : maxSoFar);
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+        if (keySelector == null)
+        {
+            throw new ArgumentNullException(nameof(keySelector));
+        }
+
+        var comparer = Comparer<TKey>.Default;
+
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext())
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        TSource maxElement = enumerator.Current;
+        TKey maxKey = keySelector(maxElement);
+
+        while (enumerator.MoveNext())
+        {
+            TSource current = enumerator.Current;
+            TKey currentKey = keySelector(current);
+
+            if (comparer.Compare(currentKey, maxKey) > 0)
+            {
+                maxElement = current;
+                maxKey = currentKey;
+            }
+        }
+
+        return maxElement;
     }
 
     /// <summary>

@@ -3,17 +3,6 @@ using System.Linq;
 using UnityEngine;
 using System;
 
-public struct RadiusDetectorEventArgs
-{
-    public IEnumerable<(GameObject, float)> objectsWithDistance;
-}
-
-public struct DetectedObjectInfo
-{
-    public GameObject gameObject;
-    public float distance;
-}
-
 public class RadiusDetector
 {
     public Dictionary<GameObject, float> DistancesByLastObjectDetected { get; private set; } = new();
@@ -21,7 +10,7 @@ public class RadiusDetector
     public event EventHandler<RadiusDetectorEventArgs> ObjectsLeaveRadius;
 
     public RadiusDetectorTargetArea TargetArea { get; }
-    
+
     private IReadOnlyList<IRadiusDetectorFilter> filters;
 
     public RadiusDetector(
@@ -42,7 +31,8 @@ public class RadiusDetector
         HandleDispatchEvents(newInRadius, outOfRadius);
     }
 
-    public bool IsDetectedInTargetArea(GameObject gameObject) {
+    public bool IsDetectedInTargetArea(GameObject gameObject)
+    {
         return DistancesByLastObjectDetected.ContainsKey(gameObject);
     }
 
@@ -108,7 +98,7 @@ public class RadiusDetector
                 ObjectsLeaveRadius,
                 outOfRadius.Select(x => (x.Key, x.Value)).ToList());
         }
-            
+
         if (newInRadius.Count > 0)
         {
             InvokeEvent(
@@ -120,7 +110,8 @@ public class RadiusDetector
             EventHandler<RadiusDetectorEventArgs> @event,
             List<(GameObject, float)> list)
         {
-            @event?.Invoke(this, new() {
+            @event?.Invoke(this, new()
+            {
                 objectsWithDistance = list
             });
         }

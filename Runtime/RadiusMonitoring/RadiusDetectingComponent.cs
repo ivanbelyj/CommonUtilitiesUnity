@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using System;
 
@@ -21,7 +19,7 @@ public abstract class RadiusDetectingComponent : MonoBehaviour
     private CompositeRadiusDetector lowRadiusAlwaysUpdate;
     private CompositeRadiusDetector commonRadiusMediumUpdate;
     private CompositeRadiusDetector longRadiusInfrequentUpdate;
-    
+
     private CompositeRadiusDetector[] allCompositeDetectors;
 
     private void Awake()
@@ -73,11 +71,13 @@ public abstract class RadiusDetectingComponent : MonoBehaviour
         };
     }
 
-    private void Update() {
+    private void Update()
+    {
         HandleUpdate(false);
     }
 
-    private void OnDrawGizmos() {
+    private void OnDrawGizmos()
+    {
         if (allCompositeDetectors != null)
         {
             HandleUpdate(true);

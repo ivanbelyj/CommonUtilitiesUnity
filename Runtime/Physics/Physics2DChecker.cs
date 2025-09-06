@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Physics2DChecker : IPhysicsChecker
@@ -42,5 +43,17 @@ public class Physics2DChecker : IPhysicsChecker
             }
         }
         return true;
+    }
+
+    public IEnumerable<GameObject> GetObstaclesBetween(Vector3 origin, Vector3 destination, LayerMask obstacleLayerMask, float pathWidth)
+    {
+        throw new System.NotImplementedException(
+            $"TODO: Implement {nameof(GetObstaclesBetween)} for 2D");
+    }
+
+    public bool IsPathClearIgnoreObjects(Vector3 origin, Vector3 destination, LayerMask obstacleMask, float pathWidth, GameObject ignoreObject1, GameObject ignoreObject2)
+    {
+        throw new System.NotImplementedException(
+            $"TODO: Implement {nameof(IsPathClearIgnoreObjects)} for 2D");
     }
 }
