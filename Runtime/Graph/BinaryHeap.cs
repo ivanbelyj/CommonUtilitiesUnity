@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
- /// <summary>
- /// Originally found on GPWiki and uploaded to GitHub by Jorge Palacios so,
- /// readers of the Unity 5.X AI Programming Cookbook could make use of it
- /// </summary>
+/// <summary>
+/// Originally found on GPWiki and uploaded to GitHub by Jorge Palacios so,
+/// readers of the Unity 5.X AI Programming Cookbook could make use of it
+/// </summary>
 namespace GPWiki
 {
     /// <summary>

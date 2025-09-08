@@ -19,17 +19,19 @@ public class Edge<TVertex, TValue> : IComparable<Edge<TVertex, TValue>>
     {
         if (ReferenceEquals(Vertex, other.Vertex))
             return 0;
-        
+
         float res = Cost - other.Cost;
         return (int)res;
     }
 
-    public bool Equals(Edge<TVertex, TValue> other) {
+    public bool Equals(Edge<TVertex, TValue> other)
+    {
         return Vertex.Id == other.Vertex.Id;
     }
 
-    public override bool Equals(object other) {
-        if (other is Edge<TVertex, TValue>) 
+    public override bool Equals(object other)
+    {
+        if (other is Edge<TVertex, TValue>)
             return Equals(other);
 
         return false;
