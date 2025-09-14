@@ -76,7 +76,7 @@ public abstract class RadiusDetectingComponent : MonoBehaviour
         HandleUpdate(false);
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (allCompositeDetectors != null)
         {
