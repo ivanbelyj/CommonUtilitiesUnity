@@ -16,41 +16,12 @@ public static class IEnumerableExtensions
     public static TSource MaxBy<TSource, TKey>(
         this IEnumerable<TSource> source,
         Func<TSource, TKey> keySelector)
-    {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
-        if (keySelector == null)
-        {
-            throw new ArgumentNullException(nameof(keySelector));
-        }
+        => FindExtreme(source, keySelector, isMax: true);
 
-        var comparer = Comparer<TKey>.Default;
-
-        using var enumerator = source.GetEnumerator();
-        if (!enumerator.MoveNext())
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        TSource maxElement = enumerator.Current;
-        TKey maxKey = keySelector(maxElement);
-
-        while (enumerator.MoveNext())
-        {
-            TSource current = enumerator.Current;
-            TKey currentKey = keySelector(current);
-
-            if (comparer.Compare(currentKey, maxKey) > 0)
-            {
-                maxElement = current;
-                maxKey = currentKey;
-            }
-        }
-
-        return maxElement;
-    }
+    public static TSource MinBy<TSource, TKey>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector)
+        => FindExtreme(source, keySelector, isMax: false);
 
     /// <summary>
     /// Returns a sequence containing no duplicate elements according to the specified key selector.
@@ -86,5 +57,50 @@ public static class IEnumerableExtensions
                 yield return element;
             }
         }
+    }
+
+    private static TSource FindExtreme<TSource, TKey>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector,
+        bool isMax)
+    {
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+        if (keySelector == null)
+        {
+            throw new ArgumentNullException(nameof(keySelector));
+        }
+
+        var comparer = Comparer<TKey>.Default;
+
+        using var enumerator = source.GetEnumerator();
+        if (!enumerator.MoveNext())
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        TSource extremeElement = enumerator.Current;
+        TKey extremeKey = keySelector(extremeElement);
+
+        while (enumerator.MoveNext())
+        {
+            TSource current = enumerator.Current;
+            TKey currentKey = keySelector(current);
+
+            var comparisonResult = comparer.Compare(currentKey, extremeKey);
+            bool shouldUpdate = isMax
+                ? comparisonResult > 0
+                : comparisonResult < 0;
+
+            if (shouldUpdate)
+            {
+                extremeElement = current;
+                extremeKey = currentKey;
+            }
+        }
+
+        return extremeElement;
     }
 }
