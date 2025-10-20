@@ -88,6 +88,7 @@
 // }
 
 // Version optimized by DeepSeek (~x10 performance)
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -206,4 +207,74 @@ public static class AStarExtensions
 
         return path.ToList();
     }
+
+    #region By Qwen
+
+    public static List<TVertex> GetPathAStar<TVertex>(
+        this IGraphForAStar<TVertex> graph,
+        Vector3 srcPos,
+        Vector3 dstPos,
+        Func<TVertex, TVertex, float> heuristic)
+    {
+        var src = graph.GetNearestVertex(srcPos);
+        var dst = graph.GetNearestVertex(dstPos);
+
+        if (src == null || dst == null || graph.AreEqual(src, dst))
+            return new List<TVertex>();
+
+        // Теперь A* работает с хэш-таблицами, а не массивами!
+        var openSet = new GPWiki.BinaryHeap<(TVertex vertex, float fScore)>();
+        var gScore = new Dictionary<TVertex, float>();
+        var fScore = new Dictionary<TVertex, float>();
+        var cameFrom = new Dictionary<TVertex, TVertex>();
+        var closedSet = new HashSet<TVertex>();
+
+        gScore[src] = 0;
+        fScore[src] = heuristic(src, dst);
+        openSet.Add((src, fScore[src]));
+
+        while (openSet.Count > 0)
+        {
+            var current = openSet.Remove().vertex;
+
+            if (graph.AreEqual(current, dst))
+            {
+                return ReconstructPath(cameFrom, current);
+            }
+
+            closedSet.Add(current);
+
+            foreach (var (neighbor, cost) in graph.GetNeighbors(current))
+            {
+                if (closedSet.Contains(neighbor)) continue;
+
+                float tentativeG = gScore.GetValueOrDefault(current, float.MaxValue) + cost;
+                if (tentativeG < gScore.GetValueOrDefault(neighbor, float.MaxValue))
+                {
+                    cameFrom[neighbor] = current;
+                    gScore[neighbor] = tentativeG;
+                    fScore[neighbor] = tentativeG + heuristic(neighbor, dst);
+                    openSet.Add((neighbor, fScore[neighbor]));
+                }
+            }
+        }
+
+        return new List<TVertex>();
+    }
+
+    private static List<TVertex> ReconstructPath<TVertex>(
+        Dictionary<TVertex, TVertex> cameFrom,
+        TVertex current)
+    {
+        var path = new List<TVertex> { current };
+        while (cameFrom.TryGetValue(current, out var prev))
+        {
+            path.Add(prev);
+            current = prev;
+        }
+        path.Reverse();
+        return path;
+    }
+
+    #endregion
 }
