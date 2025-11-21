@@ -32,7 +32,7 @@ public abstract class DynamicVertex<TKey, TValue>
     }
 }
 
-public class DynamicEdge<TKey, TValue>
+public class DynamicEdge<TKey, TValue> : IComparable<DynamicEdge<TKey, TValue>>
 {
     public DynamicVertex<TKey, TValue> TargetVertex { get; }
     public float Cost { get; }
@@ -41,6 +41,17 @@ public class DynamicEdge<TKey, TValue>
     {
         TargetVertex = targetVertex ?? throw new ArgumentNullException(nameof(targetVertex));
         Cost = cost;
+    }
+
+    public int CompareTo(DynamicEdge<TKey, TValue> other)
+    {
+        if (ReferenceEquals(TargetVertex, other.TargetVertex))
+        {
+            return 0;
+        }
+
+        var res = Cost - other.Cost;
+        return (int)res;
     }
 }
 

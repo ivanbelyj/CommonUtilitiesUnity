@@ -87,7 +87,7 @@
 //     }
 // }
 
-// Version optimized by DeepSeek (~x10 performance)
+// Version optimized by DeepSeek (~x10 performance comparing with previous)
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -208,7 +208,26 @@ public static class AStarExtensions
         return path.ToList();
     }
 
-    #region By Qwen
+    #region More flexible implementation
+    // Todo: Review and test properly.
+    // It seems to work, but it's not tested and not reviewed properly.
+
+    private struct AStarNode<TVertex> : IComparable<AStarNode<TVertex>>
+    {
+        public TVertex Vertex { get; }
+        public float FScore { get; }
+
+        public AStarNode(TVertex vertex, float fScore)
+        {
+            Vertex = vertex;
+            FScore = fScore;
+        }
+
+        public int CompareTo(AStarNode<TVertex> other)
+        {
+            return FScore.CompareTo(other.FScore);
+        }
+    }
 
     public static List<TVertex> GetPathAStar<TVertex>(
         this IGraphForAStar<TVertex> graph,
@@ -222,8 +241,7 @@ public static class AStarExtensions
         if (src == null || dst == null || graph.AreEqual(src, dst))
             return new List<TVertex>();
 
-        // Теперь A* работает с хэш-таблицами, а не массивами!
-        var openSet = new GPWiki.BinaryHeap<(TVertex vertex, float fScore)>();
+        var openSet = new GPWiki.BinaryHeap<AStarNode<TVertex>>();
         var gScore = new Dictionary<TVertex, float>();
         var fScore = new Dictionary<TVertex, float>();
         var cameFrom = new Dictionary<TVertex, TVertex>();
@@ -231,11 +249,12 @@ public static class AStarExtensions
 
         gScore[src] = 0;
         fScore[src] = heuristic(src, dst);
-        openSet.Add((src, fScore[src]));
+        openSet.Add(new AStarNode<TVertex>(src, fScore[src]));
 
         while (openSet.Count > 0)
         {
-            var current = openSet.Remove().vertex;
+            var currentNode = openSet.Remove();
+            var current = currentNode.Vertex;
 
             if (graph.AreEqual(current, dst))
             {
@@ -254,7 +273,7 @@ public static class AStarExtensions
                     cameFrom[neighbor] = current;
                     gScore[neighbor] = tentativeG;
                     fScore[neighbor] = tentativeG + heuristic(neighbor, dst);
-                    openSet.Add((neighbor, fScore[neighbor]));
+                    openSet.Add(new AStarNode<TVertex>(neighbor, fScore[neighbor]));
                 }
             }
         }
