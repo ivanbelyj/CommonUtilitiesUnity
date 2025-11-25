@@ -15,7 +15,8 @@ public static class EntityMonoBehaviourExtensions
                 $"{nameof(GetEntity)} method is assumed to be used " +
                 "on an entity. " +
                 $"Please, attach {nameof(Entity)} component to the " +
-                "GameObject or to its parent.");
+                "GameObject or to its parent.",
+                component);
         }
         return entity;
     }
