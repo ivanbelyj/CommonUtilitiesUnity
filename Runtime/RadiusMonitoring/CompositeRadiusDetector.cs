@@ -61,9 +61,9 @@ public class CompositeRadiusDetector
     private void Detect(Vector3 originPosition, bool drawGizmos)
     {
         var objectsInRadius = radiusScanner.Scan(originPosition, drawGizmos);
-        foreach (var detector in detectors)
+        for (var i = 0; i < detectors.Count; i++)
         {
-            detector.Detect(objectsInRadius);
+            detectors[i].Detect(objectsInRadius);
         }
     }
 

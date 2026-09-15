@@ -21,7 +21,7 @@ public class RadiusDetector
         this.filters = filters;
     }
 
-    public void Detect(IEnumerable<DetectedObjectInfo> allObjects)
+    public void Detect(IReadOnlyList<DetectedObjectInfo> allObjects)
     {
         var (newInRadius, objectsInRadiusSet) = GetNewObjectsInRadius(allObjects);
         newInRadius.ForEach(x => DistancesByLastObjectDetected.Add(x.gameObject, x.distance));
@@ -37,7 +37,7 @@ public class RadiusDetector
     }
 
     private (List<DetectedObjectInfo> newInRadius, HashSet<GameObject> objectsInRadiusSet)
-        GetNewObjectsInRadius(IEnumerable<DetectedObjectInfo> objectsInRadius)
+        GetNewObjectsInRadius(IReadOnlyList<DetectedObjectInfo> objectsInRadius)
     {
         // Collect new objects in the radius
         var newInRadius = new List<DetectedObjectInfo>();
